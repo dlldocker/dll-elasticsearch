@@ -1,0 +1,78 @@
+version: "3.0"
+services:
+  elasticsearch-master:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.1.1
+    container_name: elasticsearch-master
+    environment:
+      - cluster.name=es-cluster
+      - node.name=es-master
+      - node.master=true
+      - node.data=true
+      - discovery.seed_hosts=elasticsearch-node01
+      - cluster.initial_master_nodes=es-master,es-node01
+      - http.port=9200
+      - transport.tcp.port=9300
+      - bootstrap.memory_lock=true
+      - ES_JAVA_OPTS=-Xms256m -Xmx256m
+    ulimits:
+      memlock:
+          soft: -1
+          hard: -1
+      nofile:
+          soft: 65536
+          hard: 65536
+    ports:
+      # 端口映射
+      - 9200:9200
+      - 9300:9300
+    restart: always
+    volumes:
+      - ./es-master/data:/usr/share/elasticsearch/data:rw
+      - ./es-master/logs:/usr/share/elasticsearch/logs:rw
+    networks:
+      # 网段名称, 需要相互关联的容器必须处于同一个network中
+      - es-cluster-net
+  elasticsearch-node01:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.1.1
+    container_name: elasticsearch-node01
+    environment:
+      - cluster.name=es-cluster
+      - node.name=es-node01
+      - node.master=false
+      - node.data=true
+      - discovery.seed_hosts=elasticsearch-master
+      - cluster.initial_master_nodes=es-master,es-node01
+      - http.port=9200
+      - transport.tcp.port=9300
+      - bootstrap.memory_lock=true
+      - ES_JAVA_OPTS=-Xms256m -Xmx256m
+    ulimits:
+      memlock:
+          soft: -1
+          hard: -1
+      nofile:
+          soft: 65536
+          hard: 65536
+    ports:
+      - 9201:9200
+      - 9301:9300
+    restart: always
+    volumes:
+      - ./es-node01/data:/usr/share/elasticsearch/data:rw
+      - ./es-node01/logs:/usr/share/elasticsearch/logs:rw
+    networks:
+      - es-cluster-net
+  kibana711:
+    image: docker.elastic.co/kibana/kibana:7.1.1
+    container_name: kibana711
+    ports:
+      - 5601:5601
+    environment:
+      # - server.name=kibana 
+      # elasticSearch是容器名称, 这里, 集群要保证主节点对应的这个
+      - elasticsearch.hosts=http://elasticsearch:9200
+      - i18n.locale=zh-CN
+    networks:
+      - es-cluster-net
+networks: # 创建网络
+  es-cluster-net:
