@@ -1,8 +1,9 @@
 version: "3.0"
 services:
-  elasticsearch:
+  dll-elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.1.1
-    container_name: elasticsearch
+    container_name: dll-elasticsearch
+    hostname: dll-elasticsearch
     environment:
       - cluster.name=es-single
       - node.name=es-single-node
@@ -22,21 +23,9 @@ services:
       - ./data:/usr/share/elasticsearch/data:rw
       - ./logs:/usr/share/elasticsearch/logs:rw
     networks:
-      - es-single-net
+      - elk
     ports:
       - 9200:9200
       - 9300:9300
-  kibana711:
-    image: docker.elastic.co/kibana/kibana:7.1.1
-    container_name: kibana711
-    ports:
-      - 5601:5601
-    environment:
-      # - server.name=kibana 
-      # elasticSearch是容器名称, 这里, 集群要保证主节点对应的这个
-      - elasticsearch.hosts=http://elasticsearch:9200
-      - i18n.locale=zh-CN
-    networks:
-      - es-single-net
 networks: # 创建网络
-  es-single-net:
+  elk:
